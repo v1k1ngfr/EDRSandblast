@@ -297,3 +297,4 @@ if __name__ == '__main__':
     
     # Extract the offsets from the specified file or the folders containing image files. 
     extractOffsets(args.input, args.output, mode)
+
