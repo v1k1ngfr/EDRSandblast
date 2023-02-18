@@ -13,8 +13,8 @@ import threading
 CSVLock = threading.Lock()
 
 machineType = dict(x86=332, x64=34404)
-knownImageVersions = dict(ntoskrnl=list(), wdigest=list(),ci=list())
-extensions_by_mode = dict(ntoskrnl="exe", wdigest="dll",ci="dll")
+knownImageVersions = dict(ntoskrnl=list(), wdigest=list(),ci=list(),fltmgr=list())
+extensions_by_mode = dict(ntoskrnl="exe", wdigest="dll",ci="dll",fltmgr="sys")
 
 def run(args, **kargs):
     """Wrap subprocess.run to works on Windows and Linux"""
@@ -134,6 +134,9 @@ def extractOffsets(input_file, output_file, mode):
                 elif "CI.dll" in line:
                     imageType = "ci"
                     break
+                elif "FLTMGR.SYS" in line:
+                    imageType = "fltmgr"
+                    break
             else:
                 print(f"[*] File {input_file} unrecognized")
                 return 
@@ -181,6 +184,10 @@ def extractOffsets(input_file, output_file, mode):
             elif imageType == "ci":
                 symbols = [
                 ("g_CiOptions",get_symbol_offset), 
+                ]
+            elif imageType == "fltmgr":
+                symbols = [
+                ("FltGlobals",get_symbol_offset), 
                 ]
                             
                 
@@ -231,11 +238,11 @@ def loadOffsetsFromCSV(loadedVersions, CSVPath):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('mode', help='ntoskrnl or wdigest or ci. Mode to download and extract offsets for either ntoskrnl or wdigest or ci')
+    parser.add_argument('mode', help='ntoskrnl or wdigest or ci. Mode to download and extract offsets for either ntoskrnl or wdigest or ci or fltmgr')
     parser.add_argument('-i', '--input', dest='input', required=True,
-                        help='Single file or directory containing ntoskrnl.exe / wdigest.dll / ci.dll to extract offsets from. If in download mode, the PE downloaded from MS symbols servers will be placed in this folder.')
+                        help='Single file or directory containing ntoskrnl.exe / wdigest.dll / ci.dll / fltmgr.sys to extract offsets from. If in download mode, the PE downloaded from MS symbols servers will be placed in this folder.')
     parser.add_argument('-o', '--output', dest='output', 
-                        help='CSV file to write offsets to. If the specified file already exists, only new ntoskrnl versions will be downloaded / analyzed. Defaults to NtoskrnlOffsets.csv / WdigestOffsets.csv / CiOffsets.csv in the current folder.')
+                        help='CSV file to write offsets to. If the specified file already exists, only new ntoskrnl versions will be downloaded / analyzed. Defaults to NtoskrnlOffsets.csv / WdigestOffsets.csv / CiOffsets.csv / FltmgrOffsets.csv in the current folder.')
     parser.add_argument('-d', '--download', dest='download', action='store_true',
                         help='Flag to download the PE from Microsoft servers using list of versions from winbindex.m417z.com.')
     
@@ -283,6 +290,8 @@ if __name__ == '__main__':
                 output.write('wdigestVersion,g_fParameter_UseLogonCredentialOffset,g_IsCredGuardEnabledOffset\n')
             elif mode == "ci":
                 output.write('g_CiOptionsOffset\n')
+            elif mode == "fltmgr":
+                output.write('FltGlobalsOffset\n')
             else:
                 assert False
     # In download mode, an updated list of image versions published will be retrieved from https://winbindex.m417z.com.
