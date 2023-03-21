@@ -2,6 +2,7 @@ import argparse
 import csv
 import os
 import sys
+import re
 
 from requests import get
 from gzip import decompress
@@ -93,6 +94,7 @@ def downloadPEFileFromMS(pe_basename, pe_ext, knownPEVersions, output_folder):
 
 def get_symbol_offset(symbols_info, symbol_name):
     for line in symbols_info:
+        #print(f"[+] {line} <------ {symbol_name} ? ") 
         # sometimes, a "_" is prepended to the symbol name ...
         if line.strip().split(" ")[-1].endswith(symbol_name):
             return int(line.split(" ")[0], 16)
@@ -102,6 +104,63 @@ def get_symbol_offset(symbols_info, symbol_name):
 def get_field_offset(symbols_info, field_name):
     for line in symbols_info:
         if field_name in line:
+            assert "offset" in line
+            symbol_offset = int(line.split("+")[-1], 16)
+            return symbol_offset
+    else:
+        return 0
+
+# Quick and dirty but seems to do the job
+def get_FLTP_FRAME_field_offset(symbols_info, field_name):
+    iaminframe = 0
+    for line in symbols_info:
+        if "struct _FLTP_FRAME {" in line:
+            print("[+]  <------ struct _FLTP_FRAME {")
+            iaminframe = 1
+        else:
+            if "[+] };" in line:
+                iaminframe = 0
+
+        if (field_name in line and iaminframe == 1):
+            print(f"[+]  <------ {field_name} ? ")
+            assert "offset" in line
+            symbol_offset = int(line.split("+")[-1], 16)
+            return symbol_offset
+    else:
+        return 0
+
+# Quick and dirty but seems to do the job
+def get_FLT_RESOURCE_LIST_HEAD_field_offset(symbols_info, field_name):
+    iaminframe = 0
+    for line in symbols_info:
+        if "struct _FLT_RESOURCE_LIST_HEAD {" in line:
+            print("[+]  <------ struct _FLT_RESOURCE_LIST_HEAD {")
+            iaminframe = 1
+        else:
+            if "[+] };" in line:
+                iaminframe = 0
+
+        if (field_name in line and iaminframe == 1):
+            print(f"[+]  <------ {field_name} ? ")
+            assert "offset" in line
+            symbol_offset = int(line.split("+")[-1], 16)
+            return symbol_offset
+    else:
+        return 0
+
+# Quick and dirty but seems to do the job
+def get_FLT_FILTER_field_offset(symbols_info, field_name):
+    iaminframe = 0
+    for line in symbols_info:
+        if "struct _FLT_FILTER {" in line:
+            print("[+]  <------ struct _FLT_FILTER {")
+            iaminframe = 1
+        else:
+            if "[+] };" in line:
+                iaminframe = 0
+
+        if (field_name in line and iaminframe == 1):
+            print(f"[+]  <------ {field_name} ? ")
             assert "offset" in line
             symbol_offset = int(line.split("+")[-1], 16)
             return symbol_offset
@@ -164,6 +223,7 @@ def extractOffsets(input_file, output_file, mode):
             # dump all symbols
             r = run(["r2", "-c", "idpi", "-qq", '-B', '0', input_file], capture_output=True)
             all_symbols_info = [line.strip() for line in r.stdout.decode().splitlines()]
+            
 
             if imageType == "ntoskrnl":
                 symbols = [("PspCreateProcessNotifyRoutine",get_symbol_offset), 
@@ -187,15 +247,26 @@ def extractOffsets(input_file, output_file, mode):
                 ]
             elif imageType == "fltmgr":
                 symbols = [
-                ("FltGlobals",get_symbol_offset), 
+                ("FltGlobals",get_symbol_offset),
+                ("_FLT_RESOURCE_LIST_HEAD FrameList",get_field_offset),
+                ("_LIST_ENTRY rList",get_field_offset),
+                ("_LIST_ENTRY Links",get_FLTP_FRAME_field_offset),
+                ("_FLT_RESOURCE_LIST_HEAD RegisteredFilters",get_field_offset),
+                ("_LIST_ENTRY rList",get_FLT_RESOURCE_LIST_HEAD_field_offset),
+                ("uint32_t rCount",get_FLT_RESOURCE_LIST_HEAD_field_offset),
+                ("_LIST_ENTRY PrimaryLink",get_field_offset),
+                ("struct _UNICODE_STRING Name",get_FLT_FILTER_field_offset),
+                ("_FLT_MUTEX_LIST_HEAD ConnectionList",get_field_offset),
+                ("_LIST_ENTRY mList",get_field_offset),
+                ("uint32_t mCount",get_field_offset),
+                ("int32_t MaxConnections",get_field_offset)
                 ]
-                            
                 
             symbols_values = list()
             for symbol_name, get_offset in symbols:
                 symbol_value = get_offset(all_symbols_info, symbol_name)
                 symbols_values.append(symbol_value)
-                #print(f"[+] {symbol_name} = {hex(symbol_value)}") 
+                print(f"[+] {symbol_name} = {hex(symbol_value)}") 
             
             with CSVLock:
                 with open(output_file, 'a') as output:
@@ -289,9 +360,9 @@ if __name__ == '__main__':
             elif mode == "wdigest":
                 output.write('wdigestVersion,g_fParameter_UseLogonCredentialOffset,g_IsCredGuardEnabledOffset\n')
             elif mode == "ci":
-                output.write('g_CiOptionsOffset\n')
+                output.write('ciVersion,g_CiOptionsOffset\n')
             elif mode == "fltmgr":
-                output.write('FltGlobalsOffset\n')
+                output.write('fltmgrVersion,FltGlobalsOffset,FrameList,FrameList_rList,_FLTP_FRAME.Links,_FLTP_FRAME.RegisteredFilters,FilterListHead,FilterListCount,_FLT_OBJECT.PrimaryLink,_FLT_FILTER.Name,_FLT_FILTER.ConnectionList,mList,mCount,MaxConnections\n')
             else:
                 assert False
     # In download mode, an updated list of image versions published will be retrieved from https://winbindex.m417z.com.
