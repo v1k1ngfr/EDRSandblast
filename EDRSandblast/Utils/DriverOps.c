@@ -95,6 +95,8 @@ BOOL IsDriverServiceRunning(LPTSTR driverPath, LPTSTR* serviceName) {
                                             if (serviceName) {
                                                 *serviceName = _tcsdup(services[i].lpServiceName);
                                             }
+                                            _tprintf_or_not(TEXT("[!] The service %s already started %s\n"), serviceConfig->lpDisplayName, PathFindFileName(serviceConfig->lpBinaryPathName));
+                                            _tprintf_or_not(TEXT("[!] If needed, you can manually stop /delete : \ncmd /c sc stop %s\ncmd /c sc delete %s\n"), serviceConfig->lpDisplayName, serviceConfig->lpDisplayName);
                                         }
                                     }
                                     free(serviceConfig);
