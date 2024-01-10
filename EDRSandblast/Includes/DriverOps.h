@@ -28,3 +28,4 @@ TCHAR* GetEvilDriverServiceName(void);
 void SetEvilDriverServiceName(_In_z_ TCHAR* newName);
 BOOL InstallEvilDriver(TCHAR* driverPath);
 BOOL UninstallEvilDriver(void);
+HRESULT startFlt(LPCWSTR filterName);

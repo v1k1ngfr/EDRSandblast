@@ -3,6 +3,8 @@ import csv
 import os
 import sys
 import re
+# Python program to find SHA256 hash string of a file
+import hashlib
 
 from requests import get
 from gzip import decompress
@@ -167,6 +169,27 @@ def get_FLT_FILTER_field_offset(symbols_info, field_name):
     else:
         return 0
 
+# Quick and dirty but seems to do the job
+def get_FLT_SERVER_PORT_OBJECT_field_offset(symbols_info, field_name):
+    iaminframe = 0
+    for line in symbols_info:
+        if "struct _FLT_SERVER_PORT_OBJECT {" in line:
+            print("[+]  <------ struct _FLT_SERVER_PORT_OBJECT {")
+            iaminframe = 1
+        else:
+            if "[+] };" in line:
+                iaminframe = 0
+
+        if (field_name in line and iaminframe == 1):
+            print(f"[+]  <------ {field_name} ? ")
+            assert "offset" in line
+            symbol_offset = int(line.split("+")[-1], 16)
+            return symbol_offset
+    else:
+        return 0
+
+
+
 def get_file_version(path):
     # dump version number using r2
     r = run(["r2", "-c", "iV", "-qq", path], capture_output=True)
@@ -259,7 +282,12 @@ def extractOffsets(input_file, output_file, mode):
                 ("_FLT_MUTEX_LIST_HEAD ConnectionList",get_field_offset),
                 ("_LIST_ENTRY mList",get_field_offset),
                 ("uint32_t mCount",get_field_offset),
-                ("int32_t MaxConnections",get_field_offset)
+                ("int32_t MaxConnections",get_field_offset),
+                ("int32_t NumberOfConnections",get_field_offset),
+                ("void * Cookie",get_FLT_SERVER_PORT_OBJECT_field_offset),
+                ("proc * MessageNotify",get_field_offset),
+                ("proc * DisconnectNotify",get_field_offset),
+                ("proc * ConnectNotify",get_field_offset)
                 ]
                 
             symbols_values = list()
@@ -268,9 +296,20 @@ def extractOffsets(input_file, output_file, mode):
                 symbols_values.append(symbol_value)
                 print(f"[+] {symbol_name} = {hex(symbol_value)}") 
             
+
+            print(f"[+] do it : {input_file}") 
+            sha256_hash = hashlib.sha256()
+            with open(input_file,"rb") as f:
+                # Read and update hash string value in blocks of 4K
+                for byte_block in iter(lambda: f.read(4096),b""):
+                    sha256_hash.update(byte_block)
+                print(sha256_hash.hexdigest())
+
+
+
             with CSVLock:
                 with open(output_file, 'a') as output:
-                    output.write(f'{imageVersion},{",".join(hex(val).replace("0x","") for val in symbols_values)}\n')
+                    output.write(f'{sha256_hash.hexdigest()},{",".join(hex(val).replace("0x","") for val in symbols_values)}\n')
             
             #print("wrote into CSV !")
 
@@ -309,7 +348,7 @@ def loadOffsetsFromCSV(loadedVersions, CSVPath):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('mode', help='ntoskrnl or wdigest or ci. Mode to download and extract offsets for either ntoskrnl or wdigest or ci or fltmgr')
+    parser.add_argument('mode', help='ntoskrnl or wdigest or ci or fltmgr. Mode to download and extract offsets for either ntoskrnl or wdigest or ci or fltmgr')
     parser.add_argument('-i', '--input', dest='input', required=True,
                         help='Single file or directory containing ntoskrnl.exe / wdigest.dll / ci.dll / fltmgr.sys to extract offsets from. If in download mode, the PE downloaded from MS symbols servers will be placed in this folder.')
     parser.add_argument('-o', '--output', dest='output', 
@@ -362,7 +401,7 @@ if __name__ == '__main__':
             elif mode == "ci":
                 output.write('ciVersion,g_CiOptionsOffset\n')
             elif mode == "fltmgr":
-                output.write('fltmgrVersion,FltGlobalsOffset,FrameList,FrameList_rList,_FLTP_FRAME.Links,_FLTP_FRAME.RegisteredFilters,FilterListHead,FilterListCount,_FLT_OBJECT.PrimaryLink,_FLT_FILTER.Name,_FLT_FILTER.ConnectionList,mList,mCount,MaxConnections\n')
+                output.write('fltmgrVersion,FltGlobalsOffset,FrameList,FrameList_rList,_FLTP_FRAME.Links,_FLTP_FRAME.RegisteredFilters,FilterListHead,FilterListCount,_FLT_OBJECT.PrimaryLink,_FLT_FILTER.Name,_FLT_FILTER.ConnectionList,mList,mCount,MaxConnections,NumberOfConnections,srvPortCookie,MessageNotify,DisconnectNotify,ConnectNotify\n')
             else:
                 assert False
     # In download mode, an updated list of image versions published will be retrieved from https://winbindex.m417z.com.

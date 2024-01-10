@@ -1,21 +1,3 @@
-# EDRSnowBlast
-**`EDRSnowBlast`** is a fork of `EDRSandBlast` project [https://github.com/wavestone-cdt/EDRSandblast](https://github.com/wavestone-cdt/EDRSandblast) from [Thomas DIOT (Qazeer)](https://github.com/Qazeer/) and [Maxime MEIGNAN (themaks)](https://github.com/themaks)
-
-It has the following differences :  
-- Add new Windows version validation method
-- Add new driver support : GDRV.sys
-- Add feature : loading unsigned kernel driver
-- Add feature : loading unsigned minifilter driver
-- Add feature "filter-enum" for minifilter enumeration process
-- Add feature "filter-mute" for disabling messages between EDR.sys and EDR.exe
-- Add new offsets files : updated ExtractOffsets.py  
-  
-More information on EDRSnowBlast : [https://v1k1ngfr.github.io/edrsnowblast/](https://v1k1ngfr.github.io/edrsnowblast/)  
-
-More information on "filter-mute" : [https://sensepost.com/blog/2023/filter-mute-operation-investigating-edr-internal-communication/](https://sensepost.com/blog/2023/filter-mute-operation-investigating-edr-internal-communication/)  
-
-Original README below.  
-
 # EDRSandBlast
 
 `EDRSandBlast` is a tool written in `C` that weaponize a vulnerable signed

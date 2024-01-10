@@ -126,6 +126,9 @@
     <ClCompile Include="KernellandBypass\KernelDSE.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Utils\FltmgrOffsets.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Includes\CredGuard.h">
@@ -246,6 +249,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Includes\DriverGDRV.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Includes\FltmgrOffsets.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

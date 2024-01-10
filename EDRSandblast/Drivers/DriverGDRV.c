@@ -75,8 +75,8 @@ VOID ReadMemoryPrimitive_GDRV(SIZE_T Size, DWORD64 Address, PVOID Buffer) {
     //copy Size bytes from Src to Dest
     struct GDRV_MEMORY_READ ReadCommand = { 0 };
     ReadCommand.Src = Address;
-    ReadCommand.Dst = Buffer;
-    ReadCommand.ReadSize = Size;
+    ReadCommand.Dst = (DWORD64)Buffer;
+    ReadCommand.ReadSize = (DWORD)Size;
 
     DWORD BytesReturned=0;
     DeviceIoControl(GetDriverHandle_GDRV(),
@@ -104,9 +104,9 @@ VOID WriteMemoryPrimitive_GDRV(SIZE_T Size, DWORD64 Address, PVOID Buffer) {
     }
     //copy Size bytes from Dest to Src
     struct GDRV_MEMORY_WRITE WriteCommand = { 0 };
-    WriteCommand.Src = Buffer;
+    WriteCommand.Src = (DWORD64)Buffer;
     WriteCommand.Dst = Address;
-    WriteCommand.WriteSize = Size;
+    WriteCommand.WriteSize = (DWORD)Size;
 
     DWORD BytesReturned = 0;
     DeviceIoControl(GetDriverHandle_GDRV(),

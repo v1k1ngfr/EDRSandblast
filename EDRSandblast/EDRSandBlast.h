@@ -9,6 +9,8 @@ typedef enum _START_MODE {
     audit,
     firewall,
     load,
+    mute,
+    fltkd_frames,
     none
 } START_MODE;
 

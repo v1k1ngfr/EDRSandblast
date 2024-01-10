@@ -9,7 +9,8 @@
 #pragma once
 
 #include <Windows.h>
-
+#include <stdio.h>
+#include <Wincrypt.h>
 
 enum CiOffsetType {
     g_CiOptions = 0,
@@ -30,8 +31,9 @@ union CiOffsets {
 union CiOffsets g_ciOffsets;
 
 // Return the offsets of CI!g_CiOptions for the specific Windows version in use.
-void LoadCiOffsetsFromFile(TCHAR* CiOffsetFilename);
+void LoadCiOffsetsFromFile(TCHAR* CiOffsetFilename,BOOL verbose);
 void SaveCiOffsetsToFile(TCHAR* CiOffsetFilename);
 void LoadCiOffsetsFromInternet(BOOL delete_pdb);
 LPTSTR GetCiVersion();
 LPTSTR GetCiPath();
+POSVERSIONINFO getOSversion();
